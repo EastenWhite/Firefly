@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  astro-icon@1.2.0: 8df1f5d2c1a29b9136ecec5208ff56158e269fc8247bfd05bfd72d59ff46116d
+
 importers:
 
   .:
@@ -97,7 +100,7 @@ importers:
         version: 0.44.2(astro@7.2.10(@astrojs/markdown-remark@7.3.0(supports-color@10.2.2))(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.4.1)(jiti@2.7.0)(stylus@0.64.0(supports-color@10.2.2))(terser@5.50.0)(tsx@4.23.13)(yaml@2.9.0))
       astro-icon:
         specifier: ^1.2.0
-        version: 1.2.0
+        version: 1.2.0(patch_hash=8df1f5d2c1a29b9136ecec5208ff56158e269fc8247bfd05bfd72d59ff46116d)
       ci-info:
         specifier: ^4.4.0
         version: 4.4.0
@@ -8907,7 +8910,7 @@ snapshots:
       rehype-expressive-code: 0.44.2
       url-extras: 0.1.0
 
-  astro-icon@1.2.0:
+  astro-icon@1.2.0(patch_hash=8df1f5d2c1a29b9136ecec5208ff56158e269fc8247bfd05bfd72d59ff46116d):
     dependencies:
       '@iconify/tools': 5.0.12
       '@iconify/types': 2.0.0

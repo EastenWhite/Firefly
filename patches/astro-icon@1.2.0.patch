@@ -1,0 +1,34 @@
+diff --git a/dist/vite-plugin-astro-icon.js b/dist/vite-plugin-astro-icon.js
+index 7148911..6f5e72d 100644
+--- a/dist/vite-plugin-astro-icon.js
++++ b/dist/vite-plugin-astro-icon.js
+@@ -1,11 +1,16 @@
+ import { createHash } from "node:crypto";
+ import { parse, resolve } from "node:path";
+ import { mkdir, readFile, writeFile } from "node:fs/promises";
++import { fileURLToPath } from "node:url";
+ import loadLocalCollection from "./loaders/loadLocalCollection.js";
+ import loadIconifyCollections from "./loaders/loadIconifyCollections.js";
+ export function createPlugin({ include = {}, iconDir = "src/icons", svgoOptions }, ctx) {
+     let collections;
+     const { root } = ctx;
++    // On Windows `root` is a URL and `root.pathname` looks like "/F:/.../", so
++    // `resolve(root.pathname, iconDir)` yields a bogus "F:\F:\..." path, which makes
++    // chokidar fall back to watching the drive root. Use a real file system path.
++    const rootPath = root instanceof URL ? fileURLToPath(root) : root;
+     const virtualModuleId = "virtual:astro-icon";
+     const resolvedVirtualModuleId = "\0" + virtualModuleId;
+     return {
+@@ -33,10 +38,10 @@ export function createPlugin({ include = {}, iconDir = "src/icons", svgoOptions
+             }
+         },
+         configureServer({ watcher, moduleGraph }) {
+-            watcher.add(resolve(root.pathname, iconDir));
++            watcher.add(resolve(rootPath, iconDir));
+             watcher.on("all", async (_, filepath) => {
+                 const parsedPath = parse(filepath);
+-                const resolvedIconDir = resolve(root.pathname, iconDir);
++                const resolvedIconDir = resolve(rootPath, iconDir);
+                 const isSvgFileInIconDir = parsedPath.dir.startsWith(resolvedIconDir) &&
+                     parsedPath.ext === ".svg";
+                 const isAstroConfig = parsedPath.name === "astro.config";
