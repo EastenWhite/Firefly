@@ -1,0 +1,77 @@
+---
+import Badge from "@components/common/Badge.astro";
+import { Icon } from "astro-icon/components";
+import { componentLibraryConfig } from "@/config/componentLibraryConfig";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { url } from "@/utils/url-utils";
+
+const title = "组件库";
+const description = "本站自制组件的展示与预览";
+
+// 按 order 升序排，未填 order 的排在有值的后面
+const items = [...componentLibraryConfig].sort(
+	(a, b) =>
+		(a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER),
+);
+---
+
+<MainGridLayout title={title} description={description}>
+  <!-- 页面标题 -->
+  <div class="card-base px-8 py-6 mb-4">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="h-8 w-8 rounded-lg bg-(--primary)/10 flex items-center justify-center">
+        <Icon name="material-symbols:widgets" class="text-[1.25rem] text-(--primary)" />
+      </div>
+      <div class="text-2xl font-bold text-(--primary)">{title}</div>
+    </div>
+    <p class="text-30 text-sm">{description} · 共 {items.length} 个组件</p>
+  </div>
+
+  {
+    items.length > 0 ? (
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        {items.map(({ component: Preview, ...item }, index) => (
+          <article
+            class="card-base group relative flex flex-col onload-animation"
+            style={`animation-delay: calc(var(--content-delay) + ${index * 50}ms);`}
+          >
+            {/* 预览区：可交互，点在组件上不会跳转 */}
+            <div class="relative z-10 flex items-center justify-center flex-1 min-h-44 p-6 bg-(--btn-regular-bg)">
+              <Preview />
+            </div>
+
+            {/* 信息区：不拦截点击，点击穿透到整卡链接 */}
+            <div class="pointer-events-none relative flex items-end justify-between gap-3 px-4 py-3 border-t border-(--line-divider)">
+              <div class="min-w-0">
+                <h2 class="text-base font-bold truncate text-90 group-hover:text-(--primary) transition-colors">
+                  {item.name}
+                </h2>
+                <div class="mt-1.5">
+                  <Badge>{item.type}</Badge>
+                </div>
+              </div>
+              <a
+                href={`${url(`/components/${item.slug}/`)}#source`}
+                class="pointer-events-auto shrink-0 text-xs font-semibold text-(--primary) hover:text-(--primary)/70 transition-colors"
+              >
+                Get Code
+              </a>
+            </div>
+
+            {/* 整卡链接：信息区点击穿透后落到这里 */}
+            <a
+              href={url(`/components/${item.slug}/`)}
+              class="absolute inset-0 z-0 rounded-(--radius-large)"
+              aria-label={`查看 ${item.name} 详情`}
+            />
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div class="card-base px-8 py-12 text-center">
+        <Icon name="material-symbols:widgets" class="text-5xl text-30 mx-auto mb-4" />
+        <p class="text-30">暂无内容</p>
+      </div>
+    )
+  }
+</MainGridLayout>

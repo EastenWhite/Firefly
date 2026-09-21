@@ -68,6 +68,9 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			// 书签导航
 			LinkPresets.Booknav,
 
+			// 组件库
+			LinkPresets.Components,
+
 			// 哔哩哔哩追番
 			LinkPresets.Bilibili,
 
@@ -176,6 +179,11 @@ export const LinkPresets: Record<string, NavBarLink> = {
 		url: "/booknav/",
 		icon: "material-symbols:bookmarks",
 		pageKey: "booknav",
+	},
+	Components: {
+		name: "组件库",
+		url: "/components/",
+		icon: "material-symbols:widgets",
 	},
 	Bilibili: {
 		name: "哔哩哔哩",

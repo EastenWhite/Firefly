@@ -1,0 +1,25 @@
+---
+interface Props {
+	/** 按钮文字 */
+	label?: string;
+	/** 跳转链接，设置后渲染为 <a>，否则为 <button> */
+	href?: string;
+}
+
+const { label = "开始使用", href } = Astro.props;
+
+const className =
+	"inline-flex items-center gap-2 rounded-full bg-linear-to-r from-(--primary) to-(--primary)/60 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-95 dark:text-black/75";
+---
+
+{
+	href ? (
+		<a href={href} class={className}>
+			{label}
+		</a>
+	) : (
+		<button type="button" class={className}>
+			{label}
+		</button>
+	)
+}

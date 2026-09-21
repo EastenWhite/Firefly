@@ -1,0 +1,217 @@
+---
+// 流光会话框：搬自 maas-chat「模型体验」欢迎态的输入框（experienceSenderBorder.css）
+//
+// 结构：外圈弥散光晕 + 2px 流光层 + 输入框本体（三层叠放）
+// 流光在两个 ::before 上各画一个「主题色 -> 透明」的锥形渐变光点，绕中心旋转，
+// 12 点与 6 点方向速度最慢；输入框为空（会话未开始）时显示，开始输入后淡出只剩本体的静态描边。
+// 输入框外观固定为纯白卡片，不跟随站点卡片底色。
+
+interface Props {
+	/** 输入框占位文字 */
+	placeholder?: string;
+}
+
+const { placeholder = "输入消息，Enter 发送，Shift + Enter 换行" } =
+	Astro.props;
+---
+
+<div class="glow-sender relative isolate w-full" data-glow-sender>
+	<div class="glow-sender-glow" aria-hidden="true"></div>
+	<div class="glow-sender-ring" aria-hidden="true"></div>
+
+	<div class="relative z-[1] rounded-[16px] border border-(--glow-sender-line) bg-(--glow-sender-surface)">
+		<textarea
+			class="block w-full resize-none bg-transparent px-4 pt-4 pb-2 text-sm text-(--glow-sender-ink) placeholder:text-(--glow-sender-ink-weak) outline-none"
+			rows="3"
+			placeholder={placeholder}></textarea>
+
+		<div class="flex items-center justify-between gap-2 px-3 pb-3">
+			<button
+				type="button"
+				data-glow-sender-clear
+				class="rounded-lg px-3 py-1.5 text-xs font-medium text-(--glow-sender-ink-weak) transition-colors hover:text-(--primary)"
+			>
+				清空
+			</button>
+			<button
+				type="button"
+				data-glow-sender-submit
+				class="rounded-lg px-4 py-1.5 text-sm font-semibold bg-(--primary) text-white transition-opacity hover:opacity-85 active:scale-95 dark:text-black/75"
+			>
+				发送
+			</button>
+		</div>
+	</div>
+</div>
+
+<script>
+	const SUBMIT_LABEL = "发送";
+	const SUBMITTED_LABEL = "已发送";
+
+	function getSenderRoot(element: Element): HTMLElement | null {
+		return element.closest<HTMLElement>("[data-glow-sender]");
+	}
+
+	/** 提交当前输入：派发 glow-sender:submit 事件并清空输入框 */
+	function submit(root: HTMLElement): void {
+		const input = root.querySelector<HTMLTextAreaElement>("textarea");
+		const value = input?.value.trim();
+		if (!input || !value) return;
+
+		root.dispatchEvent(
+			new CustomEvent("glow-sender:submit", { detail: { value }, bubbles: true }),
+		);
+		input.value = "";
+		input.focus();
+
+		const button = root.querySelector<HTMLButtonElement>("[data-glow-sender-submit]");
+		if (!button) return;
+		button.textContent = SUBMITTED_LABEL;
+		window.setTimeout(() => {
+			button.textContent = SUBMIT_LABEL;
+		}, 1500);
+	}
+
+	// 事件委托，Swup 换页后无需重新绑定
+	document.addEventListener("click", (event) => {
+		if (!(event.target instanceof Element)) return;
+		const root = getSenderRoot(event.target);
+		if (!root) return;
+
+		if (event.target.closest("[data-glow-sender-submit]")) {
+			submit(root);
+			return;
+		}
+
+		if (event.target.closest("[data-glow-sender-clear]")) {
+			const input = root.querySelector<HTMLTextAreaElement>("textarea");
+			if (!input) return;
+			input.value = "";
+			input.focus();
+		}
+	});
+
+	document.addEventListener("keydown", (event) => {
+		// 中文输入法组词中的回车不触发发送
+		if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+		if (!(event.target instanceof HTMLTextAreaElement)) return;
+
+		const root = getSenderRoot(event.target);
+		if (!root) return;
+
+		event.preventDefault();
+		submit(root);
+	});
+</script>
+
+<style>
+	/* 输入框外观固定为纯白卡片（贴近 maas-chat 原样），不跟随站点的卡片底色 */
+	.glow-sender {
+		--glow-sender-surface: #fff;
+		--glow-sender-line: rgba(231, 233, 237, 1);
+		--glow-sender-ink: rgba(24, 24, 24, 1);
+		--glow-sender-ink-weak: rgba(24, 24, 24, 0.45);
+	}
+
+	/* 光晕层与描边层：都是绝对定位的裁切容器，内部放旋转的锥形渐变 */
+	.glow-sender-glow,
+	.glow-sender-ring {
+		position: absolute;
+		overflow: hidden;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	/* 外层光晕：放大并虚化，营造弥散的光感 */
+	.glow-sender-glow {
+		inset: -10px;
+		border-radius: 26px;
+		filter: blur(14px);
+		opacity: 0.16;
+	}
+
+	/* 流光层：环宽 2px，圆角与输入框本体同心（本体 16px + 环宽 2px = 18px）
+	   静态描边交给本体自身的 1px border，这样四条边永远是均匀的 1px；
+	   环留 2px 是为了避免半像素取整把某条边削成细线（1px 时下边最容易出现）。
+	   边缘保留原项目的 0.6px 模糊：硬边缘一旦落在半像素上，各边被抗锯齿吃掉的比例不同，
+	   看起来就会某一边偏细；柔化后各边观感一致 */
+	.glow-sender-ring {
+		inset: -2px;
+		border-radius: 18px;
+		filter: blur(0.6px);
+	}
+
+	.glow-sender-glow::before,
+	.glow-sender-ring::before {
+		content: "";
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 1000px;
+		height: 1000px;
+		transform: translate(-50%, -50%);
+		background-repeat: no-repeat;
+		transition: opacity 0.4s ease;
+		animation: glow-sender-spin 6s linear infinite;
+	}
+
+	/* 两个光点各自为「主题色 -> 透明」的渐变，光点中心分别对准 12 点与 6 点方向 */
+	.glow-sender-ring::before {
+		background-image: conic-gradient(
+			var(--primary) 0%,
+			color-mix(in oklab, var(--primary) 55%, transparent) 12%,
+			transparent 24%,
+			transparent 38%,
+			var(--primary) 50%,
+			color-mix(in oklab, var(--primary) 55%, transparent) 62%,
+			transparent 74%,
+			transparent 88%,
+			var(--primary) 100%
+		);
+	}
+
+	.glow-sender-glow::before {
+		background-image: conic-gradient(
+			var(--primary) 0%,
+			color-mix(in oklab, var(--primary) 55%, transparent) 7%,
+			transparent 20%,
+			transparent 30%,
+			var(--primary) 50%,
+			color-mix(in oklab, var(--primary) 55%, transparent) 57%,
+			transparent 70%,
+			transparent 80%,
+			var(--primary) 100%
+		);
+		animation-delay: 0.25s;
+	}
+
+	/* 开始输入（会话已开始）后流光淡出，只留静态描边 */
+	.glow-sender:has(textarea:not(:placeholder-shown)) .glow-sender-ring::before,
+	.glow-sender:has(textarea:not(:placeholder-shown)) .glow-sender-glow::before {
+		opacity: 0;
+	}
+
+	/* 整体顺时针旋转，光点经过 12 点与 6 点方向时速度最慢，3 点与 9 点方向最快 */
+	@keyframes glow-sender-spin {
+		0% {
+			transform: translate(-50%, -50%) rotate(0deg);
+			animation-timing-function: ease-in-out;
+		}
+
+		50% {
+			transform: translate(-50%, -50%) rotate(180deg);
+			animation-timing-function: ease-in-out;
+		}
+
+		100% {
+			transform: translate(-50%, -50%) rotate(360deg);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.glow-sender-glow::before,
+		.glow-sender-ring::before {
+			animation: none;
+		}
+	}
+</style>
